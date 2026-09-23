@@ -7,6 +7,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-@Composable fun SeucustoApp(){var tab by rememberSaveable{mutableIntStateOf(0)};val labels=listOf("Início","Produtos","Estoque","Produção","Mais");Scaffold(topBar={TopAppBar(title={Text("SEUCUSTO")},colors=TopAppBarDefaults.topAppBarColors(containerColor=MaterialTheme.colorScheme.primary,titleContentColor=MaterialTheme.colorScheme.onPrimary))},bottomBar={NavigationBar{labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(if(i==0)Icons.Default.Home else if(i==1)Icons.Default.Inventory else if(i==2)Icons.Default.Warehouse else if(i==3)Icons.Default.Factory else Icons.Default.MoreHoriz,label)},label={Text(label)})}}}){p->when(tab){0->Dashboard(Modifier.padding(p));1->Module(Modifier.padding(p),"PRODUTOS","Cadastro e composição de produtos.");2->Module(Modifier.padding(p),"ESTOQUE","Matérias-primas, entradas, saídas e alertas.");3->Module(Modifier.padding(p),"PRODUÇÃO","Produção com baixa transacional.");else->Module(Modifier.padding(p),"MAIS","Custos, relatórios, histórico, configurações e backup.")}}}
-@Composable private fun Dashboard(m:Modifier){LazyColumn(m.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{Text("Controle inteligente dos seus custos",style=MaterialTheme.typography.headlineSmall)};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Card(Modifier.weight(1f)){Text("PRODUTOS\n0",Modifier.padding(16.dp))};Card(Modifier.weight(1f)){Text("MATÉRIAS-PRIMAS\n0",Modifier.padding(16.dp))}}};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Card(Modifier.weight(1f)){Text("VALOR DO ESTOQUE\nR$ 0,00",Modifier.padding(16.dp))};Card(Modifier.weight(1f)){Text("ESTOQUE BAIXO\n0",Modifier.padding(16.dp))}}};item{Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Card(Modifier.weight(1f)){Text("CUSTO MÉDIO\nR$ 0,00",Modifier.padding(16.dp))};Card(Modifier.weight(1f)){Text("MARGEM MÉDIA\n0%",Modifier.padding(16.dp))}}};item{Text("Atalhos",style=MaterialTheme.typography.titleLarge)};item{Column{listOf("＋ NOVO PRODUTO","＋ MATÉRIA-PRIMA","📦 ESTOQUE","🏭 PRODUÇÃO","🧮 CALCULAR CUSTO","📊 RELATÓRIOS").forEach{OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text(it)}}}}}}
-@Composable private fun Module(m:Modifier,title:String,description:String){Column(m.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Text(title,style=MaterialTheme.typography.headlineMedium);Text(description);Button(onClick={}){Text("Começar")}}}
+import br.com.seucusto.app.data.SeucustoRepository
+@Composable
+fun SeucustoApp(repo:SeucustoRepository){
+ var tab by rememberSaveable{mutableIntStateOf(0)}
+ var productId by rememberSaveable{mutableStateOf<String?>(null)}
+ val labels=listOf("Início","Produtos","Estoque","Produção","Mais")
+ Scaffold(topBar={TopAppBar(title={Text("SEUCUSTO")},colors=TopAppBarDefaults.topAppBarColors(containerColor=MaterialTheme.colorScheme.primary,titleContentColor=MaterialTheme.colorScheme.onPrimary))},bottomBar={NavigationBar{labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(if(i==0)Icons.Default.Home else if(i==1)Icons.Default.Inventory else if(i==2)Icons.Default.Warehouse else if(i==3)Icons.Default.Factory else Icons.Default.MoreHoriz,label)},label={Text(label)})}}}){p->
+  Box(Modifier.padding(p)){
+   when(tab){
+    0->Dashboard()
+    1->if(productId==null)ProductsScreen(repo){productId=it}else ProductEditorRoute(repo,productId!!){productId=null}
+    2->RawMaterialsScreen(repo)
+    3->Module(Modifier.fillMaxSize(),"PRODUÇÃO","Módulo de produção será conectado após estoque.")
+    else->Module(Modifier.fillMaxSize(),"MAIS","Custos, relatórios, histórico, configurações e backup.")
+   }
+  }
+ }
+}
+@Composable private fun ProductEditorRoute(repo:SeucustoRepository,id:String,onBack:()->Unit){
+ var product by remember(id){mutableStateOf<br.com.seucusto.app.data.ProductEntity?>(null)}
+ LaunchedEffect(id){product=repo.findProduct(id)}
+ val p=product
+ if(p==null)Column(Modifier.fillMaxSize().padding(24.dp)){CircularProgressIndicator();TextButton(onClick=onBack){Text("VOLTAR")}} else CompositionScreen(p,repo,onBack)
+}
+@Composable private fun Dashboard(){LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){item{Text("Controle inteligente dos seus custos",style=MaterialTheme.typography.headlineSmall)};item{Text("Produtos, matérias-primas e composição conectados ao banco Room.")}}}
+@Composable private fun Module(m:Modifier,title:String,description:String){Column(m.padding(24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Text(title,style=MaterialTheme.typography.headlineMedium);Text(description)}}
