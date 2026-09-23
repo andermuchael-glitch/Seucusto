@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import br.com.seucusto.app.data.RawMaterialEntity
 import br.com.seucusto.app.data.SeucustoRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun RawMaterialsScreen(repo: SeucustoRepository){
@@ -15,15 +16,16 @@ fun RawMaterialsScreen(repo: SeucustoRepository){
  var editing by remember{mutableStateOf<RawMaterialEntity?>(null)}
  var form by remember{mutableStateOf(false)}
  var deleting by remember{mutableStateOf<RawMaterialEntity?>(null)}
- val message by repo.lastMessage.collectAsState()
+ val message by repo.lastMessage.collectAsState(initial=null)
+ val scope = rememberCoroutineScope()
  Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("MATÉRIAS-PRIMAS",style=MaterialTheme.typography.headlineSmall)
   Button(onClick={editing=null;form=true},modifier=Modifier.fillMaxWidth()){Text("+ NOVA MATÉRIA-PRIMA")}
   message?.let{Text(it,color=MaterialTheme.colorScheme.error)}
-  if(form) RawMaterialForm(editing,{d->repo.saveRawMaterial(editing?.id,d.name,d.code,d.category,d.unit,d.minimum,d.costCents,d.supplier,d.location,d.notes);form=false;editing=null},{form=false;editing=null})
+  if(form) RawMaterialForm(editing,{d->scope.launch { repo.saveRawMaterial(editing?.id,d.name,d.code,d.category,d.unit,d.minimum,d.costCents,d.supplier,d.location,d.notes);form=false;editing=null }},{form=false;editing=null})
   LazyColumn{items(materials,key={it.id}){m->Card(Modifier.fillMaxWidth().padding(4.dp)){Column(Modifier.padding(12.dp)){Text(m.name,style=MaterialTheme.typography.titleMedium);Text("Unidade: "+m.unit);Text("Custo: R$ "+"%.2f".format(m.costCents/100.0));Text("Estoque mínimo: "+m.minimumQuantity);Text("Fornecedor: "+m.supplier.ifBlank{"Não informado"});Text("Localização: "+m.location.ifBlank{"Não informada"});Row{TextButton(onClick={editing=m;form=true}){Text("EDITAR")};TextButton(onClick={deleting=m}){Text("EXCLUIR")}}}}}}
  }
- deleting?.let{m->AlertDialog(onDismissRequest={deleting=null},title={Text("Excluir matéria-prima?")},text={Text("A exclusão só será permitida quando não houver vínculo com composição ou histórico.")},confirmButton={TextButton(onClick={repo.deleteRawMaterialSafely(m.id);deleting=null}){Text("CONFIRMAR")}},dismissButton={TextButton(onClick={deleting=null}){Text("CANCELAR")}})}
+ deleting?.let{m->AlertDialog(onDismissRequest={deleting=null},title={Text("Excluir matéria-prima?")},text={Text("A exclusão só será permitida quando não houver vínculo com composição ou histórico.")},confirmButton={TextButton(onClick={scope.launch { repo.deleteRawMaterialSafely(m.id);deleting=null }}){Text("CONFIRMAR")}},dismissButton={TextButton(onClick={deleting=null}){Text("CANCELAR")}})}
 }
 private data class D(val name:String,val code:String,val category:String,val unit:String,val minimum:Double,val costCents:Long,val supplier:String,val location:String,val notes:String)
 @Composable private fun RawMaterialForm(i:RawMaterialEntity?,save:(D)->Unit,cancel:()->Unit){
