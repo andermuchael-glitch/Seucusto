@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#16834b">
+  <meta name="description" content="SeuCusto — cálculo de custos e formação de preço.">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <title>SeuCusto PWA</title>
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>SEUCUSTO</strong><span> PWA de testes</span></div>
+    <button id="installBtn" class="ghost" hidden>Instalar</button>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div><p class="eyebrow">Controle inteligente</p><h1>Custos, composição e estoque em um só lugar.</h1><p>Versão web instalável para validar o fluxo antes de levar as mesmas regras para o Android.</p></div>
+      <div class="status" id="status">Offline-first • dados neste aparelho</div>
+    </section>
+    <nav class="tabs" aria-label="Navegação">
+      <button data-tab="dashboard" class="active">Início</button>
+      <button data-tab="products">Produtos</button>
+      <button data-tab="materials">Matérias-primas</button>
+      <button data-tab="production">Produção</button>
+      <button data-tab="more">Mais</button>
+    </nav>
+    <section id="view"></section>
+  </main>
+  <dialog id="productDialog"><form method="dialog" id="productForm">
+    <h2>Novo produto</h2>
+    <label>Nome<input id="pName" required></label>
+    <label>SKU<input id="pSku"></label>
+    <label>Categoria<input id="pCategory"></label>
+    <label>Unidade de venda<input id="pUnit" value="un"></label>
+    <div class="actions"><button value="cancel" class="ghost">Cancelar</button><button value="ok" class="primary">Salvar</button></div>
+  </form></dialog>
+  <dialog id="materialDialog"><form method="dialog" id="materialForm">
+    <h2>Nova matéria-prima</h2>
+    <label>Nome<input id="mName" required></label>
+    <label>Unidade<input id="mUnit" value="un"></label>
+    <label>Custo por unidade (R$)<input id="mCost" type="number" min="0" step="0.01" required></label>
+    <label>Estoque mínimo<input id="mMin" type="number" min="0" step="0.01" value="0"></label>
+    <label>Fornecedor<input id="mSupplier"></label>
+    <label>Localização<input id="mLocation"></label>
+    <div class="actions"><button value="cancel" class="ghost">Cancelar</button><button value="ok" class="primary">Salvar</button></div>
+  </form></dialog>
+  <script src="./app.js"></script>
+</body>
+</html>
