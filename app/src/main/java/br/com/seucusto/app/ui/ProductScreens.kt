@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import br.com.seucusto.app.data.*
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun ProductsScreen(repo: SeucustoRepository, onOpen: (String) -> Unit) {
@@ -25,17 +26,19 @@ fun ProductsScreen(repo: SeucustoRepository, onOpen: (String) -> Unit) {
         Button(onClick = {
             if (name.isNotBlank() && sku.isNotBlank()) scope.launch {
                 repo.addProduct(name, sku, category, "UN", "")
-                name = ""; sku = ""; category = ""
+                name = ""
+                sku = ""
+                category = ""
             }
         }, modifier = Modifier.fillMaxWidth()) { Text("+ NOVO PRODUTO") }
         Spacer(Modifier.height(16.dp))
         Text("Produtos cadastrados", style = MaterialTheme.typography.titleMedium)
         LazyColumn {
-            items(products) { p ->
-                Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), onClick = { onOpen(p.id) }) {
+            items(products, key = { it.id }) { p ->
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), onClick = { onOpen(p.id) }) {
                     Column(Modifier.padding(16.dp)) {
                         Text(p.name, style = MaterialTheme.typography.titleMedium)
-                        Text("SKU: ${p.sku} • ${p.saleUnit}")
+                        Text("SKU: " + p.sku + " • " + p.saleUnit)
                     }
                 }
             }
@@ -52,8 +55,8 @@ fun CompositionScreen(product: ProductEntity, repo: SeucustoRepository, onBack: 
     var percent by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val total = components.sumOf { it.physicalPercent }
-    val valid = kotlin.math.abs(total - 100.0) < 0.001
+    val total = components.sumOf { it.physicalPercent ?: 0.0 }
+    val valid = abs(total - 100.0) < 0.001
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text(product.name, style = MaterialTheme.typography.headlineSmall)
         Text("COMPOSIÇÃO", style = MaterialTheme.typography.titleMedium)
@@ -64,7 +67,10 @@ fun CompositionScreen(product: ProductEntity, repo: SeucustoRepository, onBack: 
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 materials.forEach { m ->
-                    DropdownMenuItem(text = { Text("${m.name} • ${m.unit}") }, onClick = { selected = m; expanded = false })
+                    DropdownMenuItem(
+                        text = { Text(m.name + " • " + m.unit) },
+                        onClick = { selected = m; expanded = false }
+                    )
                 }
             }
         }
@@ -72,16 +78,24 @@ fun CompositionScreen(product: ProductEntity, repo: SeucustoRepository, onBack: 
         OutlinedTextField(percent, { percent = it }, label = { Text("Composição física (%)") }, modifier = Modifier.fillMaxWidth())
         Button(onClick = {
             val m = selected
-            val q = qty.toDoubleOrNull()
-            val pc = percent.toDoubleOrNull()
-            if (m != null && q != null && q > 0 && pc != null && pc in 0.0..100.0) scope.launch {
+            val q = qty.replace(",", ".").toDoubleOrNull()
+            val pc = percent.replace(",", ".").toDoubleOrNull()
+            if (m != null && q != null && q > 0.0 && pc != null && pc in 0.0..100.0) scope.launch {
                 repo.saveComponent(product.id, m.id, q, pc, "")
-                qty = ""; percent = ""; selected = null
+                qty = ""
+                percent = ""
+                selected = null
             }
         }, modifier = Modifier.fillMaxWidth()) { Text("ADICIONAR À COMPOSIÇÃO") }
         Spacer(Modifier.height(12.dp))
-        Text("Composição física: ${"%.2f".format(total)}% / 100%", style = MaterialTheme.typography.titleMedium)
-        LinearProgressIndicator(progress = { (total / 100.0).coerceIn(0.0, 1.0).toFloat() }, modifier = Modifier.fillMaxWidth())
+        Text(
+            "Composição física: " + "%.2f".format(total) + "% / 100%",
+            style = MaterialTheme.typography.titleMedium
+        )
+        LinearProgressIndicator(
+            progress = { (total / 100.0).coerceIn(0.0, 1.0).toFloat() },
+            modifier = Modifier.fillMaxWidth()
+        )
         when {
             total < 99.999 -> Text("⚠ Composição incompleta", color = MaterialTheme.colorScheme.tertiary)
             valid -> Text("✓ Composição completa: 100%", color = MaterialTheme.colorScheme.primary)
@@ -89,13 +103,13 @@ fun CompositionScreen(product: ProductEntity, repo: SeucustoRepository, onBack: 
         }
         Spacer(Modifier.height(8.dp))
         LazyColumn {
-            items(components) { c ->
+            items(components, key = { it.productId + ":" + it.rawMaterialId }) { c ->
                 val m = materials.firstOrNull { it.id == c.rawMaterialId }
-                Card(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
                     Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             Text(m?.name ?: "Matéria-prima")
-                            Text("${c.quantity} ${m?.unit ?: ""} • ${c.physicalPercent}%")
+                            Text(c.quantity.toString() + " " + (m?.unit ?: "") + " • " + (c.physicalPercent ?: 0.0).toString() + "%")
                         }
                         TextButton(onClick = { scope.launch { repo.deleteComponent(product.id, c.rawMaterialId) } }) { Text("REMOVER") }
                     }
