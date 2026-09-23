@@ -1,0 +1,11 @@
+{
+  "name":"SeuCusto",
+  "short_name":"SeuCusto",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#f4f8f5",
+  "theme_color":"#16834b",
+  "lang":"pt-BR",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
