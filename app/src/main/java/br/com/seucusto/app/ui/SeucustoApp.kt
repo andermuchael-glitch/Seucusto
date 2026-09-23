@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import br.com.seucusto.app.data.ProductEntity
 import br.com.seucusto.app.data.SeucustoRepository
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeucustoApp(repo: SeucustoRepository) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
